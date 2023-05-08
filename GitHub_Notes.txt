@@ -1,4 +1,4 @@
-git clone <URL + .git>  ## Clones the remote repository and sets the repository as the remote
+git clone <URL>  ## Clones the remote repository and sets the repository as the remote
 
 git init -b main   ## This initializes git and sets the name of the default branch to main
 
