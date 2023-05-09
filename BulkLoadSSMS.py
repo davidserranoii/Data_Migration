@@ -118,12 +118,13 @@ for file in fileList:
 
         try:
             # Add data to the table in SQL server
-            cursor.execute(bulk_insert(data_file, "[" + fileName + "]"))
+            fileName1 = "[" + fileName + "]"
+            cursor.execute(bulk_insert(data_file, fileName1))
             cursor.execute(f"""
             DECLARE @TableName nvarchar(100) = N'{fileName}'
             DECLARE @SchemaName nvarchar(100) = N'dbo'
             DECLARE @val varchar(max)
-            SELECT @val = COALESCE(@val + 'UPDATE ' + @SchemaName + '.' + @TableName + ' SET [' + COLUMN_NAME + '] = '''' WHERE [' + COLUMN_NAME + '] IS NULL' + '; ','')
+            SELECT @val = COALESCE(@val + 'UPDATE ' + @SchemaName + '.[' + @TableName + '] SET [' + COLUMN_NAME + '] = '''' WHERE [' + COLUMN_NAME + '] IS NULL' + '; ','')
             FROM INFORMATION_SCHEMA.COLUMNS C
             WHERE TABLE_NAME = @TableName AND C.DATA_TYPE like '%CHAR%'
             EXEC (@val);
@@ -136,7 +137,7 @@ for file in fileList:
             DECLARE @TableName nvarchar(100) = N'{fileName}'
             DECLARE @SchemaName nvarchar(100) = N'dbo'
             DECLARE @val varchar(max)
-            SELECT @val = COALESCE(@val + 'UPDATE ' + @SchemaName + '.' + @TableName + ' SET [' + COLUMN_NAME + '] = '''' WHERE [' + COLUMN_NAME + '] = "NAT"' + '; ','')
+            SELECT @val = COALESCE(@val + 'UPDATE ' + @SchemaName + '.[' + @TableName + '] SET [' + COLUMN_NAME + '] = '''' WHERE [' + COLUMN_NAME + '] = ''NAT''' + '; ','')
             FROM INFORMATION_SCHEMA.COLUMNS C
             WHERE TABLE_NAME = @TableName AND C.DATA_TYPE like '%CHAR%'
             EXEC (@val);
