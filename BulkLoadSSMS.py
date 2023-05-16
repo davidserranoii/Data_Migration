@@ -6,9 +6,6 @@ import socket
 
 ##############################
 
-# Testing File Location
-print("C:\\Users\\DavidSerrano\\Desktop\\1_Working\\Y_Y Test\\Test Data")
-
 # System Information
 selectFilePath = input("What is the file path for the files you wish to load? ")
 DATABASE_NAME = input("What is the Database Name: ")
@@ -29,7 +26,6 @@ connection_string = f"""
 
 # Write Variables for Connection Request
 cnxn = pyodbc.connect(connection_string)
-print(cnxn)
 cursor = cnxn.cursor()
 
 # File Path Information Displayed for the User
@@ -67,37 +63,39 @@ for file in fileList:
     fileName = file[:-4]
     print("File Name: " + fileName)
 
+    # Try to read file to data table, if not, add to dropped file list
     try:
-        # Encoding Type cp437 or cp1252, datatype = string, low_memory allows for large files
+        # Try default coding, if not, try cp437 encoding
         try:
             df = pd.read_csv(selectFilePath + "\\" + file, low_memory=False, dtype=str)
             print("Added")
         except Exception as e:
             df = pd.read_csv(selectFilePath + "\\" + file, low_memory=False, encoding='cp437', dtype=str)
-        # print(df.dtypes)
-        # print(df['Referrer Contact HomePhone'])
+
+        # Write data table to csv file, fixes save issue
         df.to_csv(data_file, index=False)
+
+        # Building Initial Table for SSMS (Only Headers, and Data Type)
         allHeadersDF = ""
         for col in df.columns:
             allHeadersDF = (str(allHeadersDF) + "[" + str(col) + "] VARCHAR(max), ")
         allHeadersDF = allHeadersDF[:-2]
-        # print("All Headers DF: " + allHeadersDF)
 
     except Exception as e:
         print(e)
         fileListDropped.append(file)
         continue
+
     print(df.head())
     print("Dropped Files:", fileListDropped)
-    print("File Name:" + str(file))
+    print("File Name: " + str(file))
 
     lookGood = input("Does this look good? 'Y'").upper()
     if lookGood == "Y":
 
-        # SQL Statement to create Table in Server with the headers needed for a merge
+        # SQL Statement to create Initial Table in Server with the headers needed for a merge
         try:
             cursor.execute("CREATE TABLE [" + fileName + "] (" + allHeadersDF + ");")
-            # Save Changes
             cursor.commit()
 
         # Error occurs, likely table already exists
@@ -108,18 +106,18 @@ for file in fileList:
             # Drop Existing Table
             if dropTable == 'Y':
                 cursor.execute("Drop TABLE [" + fileName + "]")
-                # Save Changes
                 cursor.commit()
 
                 # Create Table in Server with the headers needed for a merge
                 cursor.execute("CREATE TABLE [" + fileName + "] (" + allHeadersDF + ");")
-                # Save Changes
                 cursor.commit()
 
         try:
-            # Add data to the table in SQL server
+            # Try to Merge Table Data with Existing Table in SSMS (Existing Shell)
             fileName1 = "[" + fileName + "]"
             cursor.execute(bulk_insert(data_file, fileName1))
+
+            # Remove Existing Null values within Tables
             cursor.execute(f"""
             DECLARE @TableName nvarchar(100) = N'{fileName}'
             DECLARE @SchemaName nvarchar(100) = N'dbo'
@@ -133,6 +131,7 @@ for file in fileList:
             print(data_file + " inserted")
             cursor.commit()
 
+            # Remove Existing NAT values within Tables (NAT == NULL in date columns)
             cursor.execute(f"""
             DECLARE @TableName nvarchar(100) = N'{fileName}'
             DECLARE @SchemaName nvarchar(100) = N'dbo'
@@ -145,16 +144,19 @@ for file in fileList:
 
             print(data_file + " inserted")
             cursor.commit()
+
+        # Merging the data to the existing table failed, rollback changes to SSMS
         except Exception as e:
             print(e)
             cnxn.rollback()
             print('ERROR: Transaction rollback')
+
     else:
         # File not imported is added to a list
         fileListDropped.append(fileName)
         pass
-# End of For Loop
 
+# End of For Loop
 ########################
 print("The files not added to the database:")
 print(fileListDropped)
