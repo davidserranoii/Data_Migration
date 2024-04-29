@@ -86,6 +86,8 @@
 <p><strong>Using the tool: Excel_to_CSV</strong></p>
 <ol>
   <li>Run the Compare_Colums script.</li>
-
+  <li>Input the filepath to your excel file.</li>
+  <li>Input the linking value. This is used to link all tabs to a single value across all sheets.</li> 
+  <li>Do this for all xlsx files. Input s to skip unwanted files.</li>
 </ol>
 
