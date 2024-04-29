@@ -31,7 +31,7 @@ print(DF_ONE.head())
 print('FileName: ' + fileName)
 
 #############################################################
-selectFilePath2 = input("What is the filepath for the first file:")
+selectFilePath2 = input("What is the filepath for the second file:")
 
 # Display filelist to select file for datatable 2
 fileList2 = os.listdir(selectFilePath2)
